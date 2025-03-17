@@ -1,76 +1,40 @@
 package main
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"net/http"
 )
 
-type Locations struct {
-	Count    int    `json:"count"`
-	Next     string `json:"next"`
-	Previous string `json:"previous"`
-	Results  []struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"results"`
-}
-
-func commandMap(locations *Locations) error {
-	url := "https://pokeapi.co/api/v2/location-area"
-	if locations.Next != "" {
-		url = locations.Next
-	}
-
-	res, err := http.Get(url)
+func commandMapf(cfg *config) error {
+	locationsResp, err := cfg.pokeapiClient.ListLocations(cfg.nextLocationsURL)
 	if err != nil {
-		return fmt.Errorf("error occured getting locations")
+		return err
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("Error reading request body")
-	}
-	defer res.Body.Close()
+	cfg.nextLocationsURL = locationsResp.Next
+	cfg.prevLocationsURL = locationsResp.Previous
 
-	err = json.Unmarshal(body, &locations)
-	if err != nil {
-		return fmt.Errorf("Error decoding response")
-	}
-
-	for _, location := range locations.Results {
-		fmt.Println(location.Name)
+	for _, loc := range locationsResp.Results {
+		fmt.Println(loc.Name)
 	}
 	return nil
-
 }
 
-func commandMapB(locations *Locations) error {
-	url := "https://pokeapi.co/api/v2/location-area"
-	if locations.Previous != "" {
-		url = locations.Previous
+func commandMapb(cfg *config) error {
+	if cfg.prevLocationsURL == nil {
+		return errors.New("you're on the first page")
 	}
 
-	res, err := http.Get(url)
+	locationResp, err := cfg.pokeapiClient.ListLocations(cfg.prevLocationsURL)
 	if err != nil {
-		return fmt.Errorf("error occured getting locations")
+		return err
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("Error reading request body")
-	}
-	defer res.Body.Close()
+	cfg.nextLocationsURL = locationResp.Next
+	cfg.prevLocationsURL = locationResp.Previous
 
-	err = json.Unmarshal(body, &locations)
-	if err != nil {
-		return fmt.Errorf("Error decoding response")
-	}
-
-	for _, location := range locations.Results {
-		fmt.Println(location.Name)
+	for _, loc := range locationResp.Results {
+		fmt.Println(loc.Name)
 	}
 	return nil
-
 }
