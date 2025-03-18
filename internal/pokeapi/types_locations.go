@@ -28,7 +28,7 @@ type LocationDetails struct {
 	GameIndex int `json:"game_index"`
 	ID        int `json:"id"`
 	Location  struct {
-		Name string `json:"name"`
+		Name *string `json:"name"`
 		URL  *string `json:"url"`
 	} `json:"location"`
 	Name  string `json:"name"`
